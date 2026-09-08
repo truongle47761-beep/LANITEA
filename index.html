@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bảng chấm công của Mỹ</title>
+<style>
+:root{--bg:#f4f6f8;--card:#fff;--text:#17202a;--muted:#6b7280;--line:#e5e7eb;--primary:#2563eb;--danger:#dc2626;--green:#059669}
+*{box-sizing:border-box} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--text)}
+.wrap{max-width:1250px;margin:auto;padding:18px}.app{background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:0 8px 30px #0000000b;overflow:hidden}
+header{padding:18px 22px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:15px}
+h1{margin:0;font-size:23px} .sub{color:var(--muted);font-size:13px;margin-top:4px}
+.grid{display:grid;grid-template-columns:330px 1fr;min-height:650px}.side{padding:18px;border-right:1px solid var(--line);background:#fafafa}.main{padding:18px}
+label{font-size:12px;font-weight:700;display:block;margin:12px 0 6px}
+input,textarea,button{font:inherit} input,textarea{width:100%;border:1px solid #d7dce2;border-radius:10px;padding:10px 11px;background:#fff;outline:none}input:focus,textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px #2563eb18}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:9px}.btn{border:0;border-radius:10px;padding:11px 13px;font-weight:700;cursor:pointer}.primary{background:var(--primary);color:white;width:100%;margin-top:14px}.secondary{background:#eef2ff;color:#1d4ed8}.danger{background:#fee2e2;color:#b91c1c}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px}.stat{border:1px solid var(--line);border-radius:13px;padding:13px;background:#fff}.stat b{display:block;font-size:22px;margin-top:4px}.stat span{font-size:12px;color:var(--muted)}
+.toolbar{display:flex;gap:8px;align-items:end;flex-wrap:wrap;margin-bottom:12px}.toolbar .date{width:150px}.toolbar button{height:40px}
+.tablebox{border:1px solid var(--line);border-radius:13px;overflow:auto}.empty{text-align:center;padding:45px;color:var(--muted)}
+table{border-collapse:collapse;width:100%;min-width:820px}th,td{padding:11px 10px;border-bottom:1px solid var(--line);text-align:left;font-size:13px;vertical-align:top}th{background:#f8fafc;font-size:12px;color:#4b5563;position:sticky;top:0}tr:last-child td{border-bottom:0}
+.hours{font-weight:800}.decimal{color:var(--green);font-weight:700}.ship{font-weight:800;color:#b45309}.note{color:#6b7280;max-width:180px;white-space:normal}.delete{padding:7px 9px;border:0;border-radius:8px;cursor:pointer;background:#fee2e2;color:#b91c1c}
+.help{margin-top:15px;padding:12px;border-radius:10px;background:#eff6ff;color:#1e40af;font-size:12px;line-height:1.55}.shipPreview{margin-top:7px;font-size:12px;color:#92400e}
+@media(max-width:1050px){.stats{grid-template-columns:repeat(3,1fr)}}@media(max-width:850px){.grid{grid-template-columns:1fr}.side{border-right:0;border-bottom:1px solid var(--line)}.stats{grid-template-columns:repeat(2,1fr)}header{align-items:flex-start;flex-direction:column}}
+</style>
+</head>
+<body>
+<div class="wrap"><div class="app">
+<header><div><h1>📋 BẢNG CHẤM CÔNG CỦA MỸ</h1><div class="sub">Chấm ca • tính giờ • tính tiền ship — lưu ngay trên trình duyệt</div></div>
+<button class="btn secondary" onclick="exportCSV()">⬇️ Xuất CSV</button></header>
+
+<div class="grid">
+<aside class="side">
+<h3 style="margin:0 0 4px">➕ Thêm ca</h3>
+<div class="sub">Ca qua 0:00 được tự động tính đúng.</div>
+<label>Ngày</label><input id="date" type="date">
+<label>Mức lương / giờ (₫)</label><input id="rate" type="number" min="0" step="1000" value="25000" placeholder="Ví dụ: 25000">
+<div class="row"><div><label>Giờ vào</label><input id="start" type="time"></div><div><label>Giờ ra</label><input id="end" type="time"></div></div>
+<label>Ghi chú / tiền ship</label>
+<textarea id="note" rows="4" placeholder="Ví dụ: 1₫5,2₫5,1₫2,2₫2"></textarea>
+<div class="shipPreview" id="shipPreview">Tiền ship: 0₫</div>
+<button class="btn primary" onclick="addShift()">Lưu ca</button>
+<div class="help">
+<b>Cú pháp ship:</b> <code>1₫5</code> = 1 đơn × 5.000₫; <code>2₫5</code> = 2 đơn × 5.000₫.<br>
+Có thể ghi nhiều mức: <code>1₫5,2₫5,1₫2,2₫2</code> → tự cộng tiền.
+</div>
+</aside>
+
+<main class="main">
+<div class="stats">
+<div class="stat"><span>Số ca</span><b id="count">0</b></div>
+<div class="stat"><span>Tổng thời gian</span><b id="totalPretty">0 giờ 00 phút</b></div>
+<div class="stat"><span>Tổng giờ công</span><b id="totalDecimal">0,00</b></div>
+<div class="stat"><span>Tổng tiền ship</span><b id="totalShip">0₫</b></div>
+<div class="stat"><span>Tổng lương</span><b id="totalSalary">0₫</b></div>
+</div>
+
+<div class="toolbar">
+<div><label>Từ ngày</label><input class="date" id="from" type="date"></div>
+<div><label>Đến ngày</label><input class="date" id="to" type="date"></div>
+<button class="btn secondary" onclick="render()">🧮 Tính khoảng ngày</button>
+<button class="btn" style="background:#f3f4f6" onclick="clearFilter()">Xem tất cả</button>
+</div>
+
+<div class="tablebox"><table><thead><tr>
+<th>Ngày</th><th>Giờ vào</th><th>Giờ ra</th><th>Thời gian</th><th>Giờ công</th><th>Tiền lương</th><th>Tiền ship</th><th>Ghi chú</th><th></th>
+</tr></thead><tbody id="tbody"></tbody></table></div>
+</main>
+</div></div></div>
+
+<script>
+const KEY="bang_cham_cong_cua_my_v2";
+let saved=JSON.parse(localStorage.getItem(KEY)||"null");
+let shifts=saved?.shifts || JSON.parse(localStorage.getItem("bang_cham_cong_cua_my_v1")||"[]");
+let hourlyRate=saved?.hourlyRate ?? 25000;
+const $=id=>document.getElementById(id);
+const money=n=>new Intl.NumberFormat("vi-VN").format(n)+"₫";
+function pad(n){return String(n).padStart(2,"0")}
+function pretty(min){return `${Math.floor(min/60)} giờ ${pad(min%60)} phút`}
+function duration(s,e){
+  let [sh,sm]=s.split(":").map(Number),[eh,em]=e.split(":").map(Number);
+  let a=sh*60+sm,b=eh*60+em;if(b<=a)b+=1440;return b-a;
+}
+function shipCalc(note){
+  let total=0, parts=[];
+  let re=/(\d+)\s*₫\s*(\d+)/g,m;
+  while((m=re.exec(note||""))){let qty=+m[1],k=+m[2]; total+=qty*k*1000;parts.push(`${qty}×${k}k`)}
+  return {total,parts};
+}
+function save(){localStorage.setItem(KEY,JSON.stringify({shifts,hourlyRate}))}
+function getRate(){return Math.max(0,Number($("rate").value)||0)}
+function salaryFor(x){return Math.round(x.minutes/60*getRate())}
+function addShift(){
+  if(!$("date").value||!$("start").value||!$("end").value){alert("Vui lòng nhập ngày, giờ vào và giờ ra.");return}
+  hourlyRate=getRate();
+  const ship=shipCalc($("note").value);
+  const mins=duration($("start").value,$("end").value);
+  shifts.push({id:Date.now(),date:$("date").value,start:$("start").value,end:$("end").value,note:$("note").value,minutes:mins,ship:ship.total,rate:hourlyRate,salary:Math.round(mins/60*hourlyRate)});
+  shifts.sort((a,b)=>(b.date+b.start).localeCompare(a.date+a.start));save();render();
+  $("note").value="";updateShipPreview();
+}
+function del(id){if(confirm("Xóa ca này?")){shifts=shifts.filter(x=>x.id!==id);save();render()}}
+function fmtDate(d){return new Date(d+"T00:00:00").toLocaleDateString("vi-VN")}
+function filtered(){
+  let f=$("from").value,t=$("to").value;
+  return shifts.filter(x=>(!f||x.date>=f)&&(!t||x.date<=t));
+}
+function render(){
+ const data=filtered();let total=data.reduce((a,x)=>a+x.minutes,0),ship=data.reduce((a,x)=>a+x.ship,0);
+ let salary=data.reduce((a,x)=>a+(x.salary ?? Math.round(x.minutes/60*(x.rate ?? getRate()))),0);
+ $("count").textContent=data.length;$("totalPretty").textContent=pretty(total);$("totalDecimal").textContent=(total/60).toFixed(2).replace(".",",");$("totalShip").textContent=money(ship);$("totalSalary").textContent=money(salary);$("rate").value=hourlyRate;
+ $("tbody").innerHTML=data.length?data.map(x=>`<tr><td><b>${fmtDate(x.date)}</b></td><td>${x.start}</td><td>${x.end}${x.end<=x.start?" <small>🌙 qua 0:00</small>":""}</td><td class="hours">${pretty(x.minutes)}</td><td class="decimal">${(x.minutes/60).toFixed(2).replace(".",",")} giờ</td><td class="ship">${money(x.salary ?? Math.round(x.minutes/60*(x.rate ?? getRate())))}</td><td class="ship">${money(x.ship)}</td><td class="note">${escapeHtml(x.note||"—")}</td><td><button class="delete" onclick="del(${x.id})">🗑️</button></td></tr>`).join(""):`<tr><td colspan="9" class="empty">Chưa có ca nào trong khoảng ngày này.</td></tr>`;
+}
+function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
+function clearFilter(){$("from").value="";$("to").value="";render()}
+function updateShipPreview(){let s=shipCalc($("note").value);$("shipPreview").textContent="Tiền ship: "+money(s.total)+(s.parts.length?" ("+s.parts.join(" + ")+")":"")}
+$("note").addEventListener("input",updateShipPreview);
+$("rate").addEventListener("change",()=>{hourlyRate=getRate();save();render()});
+$("rate").addEventListener("input",()=>{hourlyRate=getRate();});
+$("date").value=new Date().toISOString().slice(0,10);
+$("rate").value=hourlyRate;
+function exportCSV(){
+ const data=filtered();let rows=[["Ngày","Giờ vào","Giờ ra","Phút","Giờ công","Mức lương/giờ","Tiền lương","Tiền ship","Ghi chú"]];
+ data.forEach(x=>rows.push([x.date,x.start,x.end,x.minutes,(x.minutes/60).toFixed(2),x.rate ?? hourlyRate,x.salary ?? Math.round(x.minutes/60*(x.rate ?? hourlyRate)),x.ship,x.note||""]));
+ let csv="\ufeff"+rows.map(r=>r.map(v=>`"${String(v).replaceAll('"','""')}"`).join(",")).join("\n");
+ let a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));a.download="bang-cham-cong-cua-my.csv";a.click();URL.revokeObjectURL(a.href)
+}
+render();updateShipPreview();
+</script>
+</body>
+</html>
